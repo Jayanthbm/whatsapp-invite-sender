@@ -97,7 +97,7 @@ PDF + Image + Traditional Invitation Message
 Clone repository:
 
 ```bash
-git clone https://github.com/your-username/whatsapp-wedding-invite-sender.git
+git clone https://github.com/Jayanthbm/whatsapp-invite-sender.git
 
 cd whatsapp-wedding-invite-sender
 ```
