@@ -1,18 +1,36 @@
 require("dotenv").config();
 
+const config = require("./config");
 const createClient = require("./services/whatsapp");
 const sendInvites = require("./services/sender");
-const { getContacts } = require("./services/googleSheets");
+const { getContacts } = require("./services/contacts");
 
 const command = process.argv[2];
-const sheetName = process.argv[3];
 
 async function main() {
   const client = createClient();
 
   if (command === "login") {
     console.log("Starting WhatsApp login...");
+
+    client.on("qr", () => {
+      console.log("Please scan the QR code");
+    });
+
+    client.on("authenticated", () => {
+      console.log("✓ Authentication successful");
+    });
+
+    client.on("ready", async () => {
+      console.log("✓ WhatsApp login successful");
+      console.log("Session saved locally");
+
+      await client.destroy();
+      process.exit(0);
+    });
+
     client.initialize();
+
     return;
   }
 
@@ -33,33 +51,20 @@ async function main() {
   }
 
   if (command === "send") {
-    if (!sheetName) {
-      console.error(`
-Usage:
+    console.log(`Loading contacts using source mode: ${config.source.mode}`);
 
-node app.js send Friends
-node app.js send Relatives
-node app.js send Elders
-      `);
+    const contacts = await getContacts();
 
-      process.exit(1);
-    }
-
-    console.log(`Loading contacts from sheet '${sheetName}'...`);
-
-    const contacts = await getContacts(sheetName);
-
-    console.log(`Found ${contacts.length} pending contacts`);
+    console.log(`Found ${contacts.length} contacts`);
 
     if (contacts.length === 0) {
-      console.log("No pending contacts found");
-
+      console.log("No contacts found");
       process.exit(0);
     }
 
     client.on("ready", async () => {
       try {
-        await sendInvites(client, contacts, sheetName);
+        await sendInvites(client, contacts);
 
         await client.destroy();
 
@@ -83,11 +88,7 @@ Usage:
 
 node app.js login
 
-node app.js send Friends
-
-node app.js send Relatives
-
-node app.js send Elders
+node app.js send
 
 node app.js logout
 `);

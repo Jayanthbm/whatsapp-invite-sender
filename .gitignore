@@ -148,3 +148,4 @@ vite.config.ts.timestamp-*
 service-account.json
 
 **/.DS_Store
+contacts.csv

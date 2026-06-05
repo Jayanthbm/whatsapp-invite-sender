@@ -1,6 +1,6 @@
-# WhatsApp Wedding Invite Sender
+# WhatsApp Invite Sender
 
-A simple Node.js utility to send personalized WhatsApp wedding invitations using WhatsApp Web.
+A simple Node.js utility to send personalized WhatsApp invitations using WhatsApp Web.
 
 Supports:
 
@@ -9,8 +9,11 @@ Supports:
 * Personalized messages
 * Multiple message variants
 * Google Sheets integration
-* Automatic delivery status updates
-* Resume-safe processing using Google Sheets
+* CSV files
+* Direct number lists
+* Named contacts
+* Automatic delivery status tracking
+* Resume-safe processing
 
 Built using:
 
@@ -24,7 +27,15 @@ Built using:
 
 ✅ Login once using WhatsApp Web
 
-✅ Send invitations from Google Sheets
+✅ Multiple contact sources
+
+✅ Google Sheets support
+
+✅ CSV support
+
+✅ Direct number support
+
+✅ Named contact support
 
 ✅ Multiple invitation variants
 
@@ -38,17 +49,81 @@ Built using:
 
 ✅ IST timestamp updates
 
-✅ Skip already-sent contacts
+✅ Resume-safe processing with Google Sheets
 
 ✅ Works with personal WhatsApp account
+
+---
+
+## Contact Sources
+
+The sender supports multiple contact sources.
+
+### Google Sheets
+
+```js
+source: {
+  mode: "google-sheets",
+  sheetName: "Friends"
+}
+```
+
+### CSV File
+
+```js
+source: {
+  mode: "csv",
+  csvPath: "./contacts.csv"
+}
+```
+
+Example CSV:
+
+```csv
+Name,Phone,Variant
+Rahul,919876543210,variant1
+Priya,919876543211,variant2
+```
+
+### Numbers
+
+```js
+source: {
+  mode: "numbers",
+  numbers: [
+    "919876543210",
+    "919876543211"
+  ]
+}
+```
+
+Uses the default variant configured in `config.js`.
+
+### Named Numbers
+
+```js
+source: {
+  mode: "named-numbers",
+  namedNumbers: [
+    {
+      name: "Rahul",
+      phone: "919876543210",
+      variant: "variant1"
+    },
+    {
+      name: "Uncle Ramesh",
+      phone: "919876543211",
+      variant: "variant3"
+    }
+  ]
+}
+```
 
 ---
 
 ## Google Sheet Structure
 
 Each sheet/tab acts as a batch.
-
-Example:
 
 | Name         | Phone        | Variant  | Sent  | SentAt | Remarks | Call | Other Info |
 | ------------ | ------------ | -------- | ----- | ------ | ------- | ---- | ---------- |
@@ -99,7 +174,7 @@ Clone repository:
 ```bash
 git clone https://github.com/Jayanthbm/whatsapp-invite-sender.git
 
-cd whatsapp-wedding-invite-sender
+cd whatsapp-invite-sender
 ```
 
 Install dependencies:
@@ -108,7 +183,7 @@ Install dependencies:
 npm install
 ```
 
-Install Google APIs:
+Optional (only for Google Sheets mode):
 
 ```bash
 npm install googleapis dotenv
@@ -116,56 +191,47 @@ npm install googleapis dotenv
 
 ---
 
-## Project Structure
+## Configuration
 
-```text
-.
-├── app.js
-├── config.js
-├── service-account.json
-├── .env
-│
-├── assets
-│   ├── invite.jpg
-│   └── invitation.pdf
-│
-├── services
-│   ├── whatsapp.js
-│   ├── sender.js
-│   └── googleSheets.js
-│
-└── utils
-    ├── delay.js
-    └── date.js
+Update `config.js`:
+
+```js
+source: {
+  mode: "google-sheets",
+  sheetName: "Friends"
+}
+```
+
+Available modes:
+
+```js
+google-sheets
+csv
+numbers
+named-numbers
 ```
 
 ---
 
-## Configuration
+## Google Sheets Setup
 
-### .env
+Create a Google Cloud Service Account.
 
-```env
-SPREADSHEET_ID=YOUR_GOOGLE_SHEET_ID
-```
-
-### Service Account
-
-Create a Google Cloud Service Account and download:
+Download:
 
 ```text
 service-account.json
 ```
 
-Place it in project root.
+Place it in the project root.
 
-Share your Google Sheet with:
+Create:
 
-```text
-service-account@project-id.iam.gserviceaccount.com
+```env
+SPREADSHEET_ID=YOUR_SPREADSHEET_ID
 ```
 
-Editor access is required.
+Share your Google Sheet with the service account email and grant Editor access.
 
 ---
 
@@ -179,31 +245,63 @@ node app.js login
 
 Scan the QR code using WhatsApp.
 
-Session is stored locally.
+Session is stored locally and reused automatically.
 
 ---
 
 ## Sending Invites
 
-Send a batch:
+Send invites using the configured source:
 
 ```bash
-node app.js send Friends
+node app.js send
 ```
 
-Send another sheet:
+Examples:
 
-```bash
-node app.js send Relatives
+### Google Sheets
+
+```js
+source: {
+  mode: "google-sheets",
+  sheetName: "Friends"
+}
 ```
 
-Send elders batch:
+### CSV
 
-```bash
-node app.js send Elders
+```js
+source: {
+  mode: "csv",
+  csvPath: "./friends.csv"
+}
 ```
 
-The sheet name must match the tab name in Google Sheets.
+### Numbers
+
+```js
+source: {
+  mode: "numbers",
+  numbers: [
+    "919876543210"
+  ]
+}
+```
+
+### Named Numbers
+
+```js
+source: {
+  mode: "named-numbers",
+  namedNumbers: [
+    {
+      name: "Rahul",
+      phone: "919876543210",
+      variant: "variant1"
+    }
+  ]
+}
+```
 
 ---
 
@@ -215,42 +313,51 @@ node app.js logout
 
 ---
 
-## Status Updates
+## Status Tracking
 
-Successful delivery:
+### Google Sheets Mode
 
-| Sent | Remarks            |
-| ---- | ------------------ |
-| TRUE | SUCCESS (variant2) |
+The following columns are automatically updated:
 
-Failed delivery:
+| Column  | Description           |
+| ------- | --------------------- |
+| Sent    | TRUE/FALSE            |
+| SentAt  | IST timestamp         |
+| Remarks | Success/error details |
 
-| Sent  | Remarks         |
-| ----- | --------------- |
-| FALSE | NOT_ON_WHATSAPP |
-
-or
-
-| Sent  | Remarks                 |
-| ----- | ----------------------- |
-| FALSE | FAILED: <error message> |
-
-Timestamp is automatically stored in IST:
+Example:
 
 ```text
-2026-06-03 18:45:32
+SUCCESS (variant1)
+SUCCESS (variant3)
+NOT_ON_WHATSAPP
+INVALID_VARIANT
+FAILED: <error>
+```
+
+### CSV / Numbers / Named Numbers Mode
+
+Status is written to:
+
+```js
+logfile: "./logs/invites.txt"
+```
+
+Example:
+
+```text
+2026-06-05T15:20:10Z,Rahul,919876543210,SUCCESS,SUCCESS (variant1)
 ```
 
 ---
 
 ## Example Workflow
 
-1. Add contacts to Google Sheet
-2. Select desired variant per contact
-3. Login to WhatsApp
-4. Run sender
-5. Script updates status automatically
-6. Re-run anytime to process remaining contacts
+1. Configure source in `config.js`
+2. Login to WhatsApp
+3. Run sender
+4. Status is automatically updated
+5. Re-run anytime to continue pending contacts
 
 ---
 

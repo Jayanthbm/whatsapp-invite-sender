@@ -4,8 +4,9 @@ function createClient() {
   return new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-      headless: false
-    }
+      headless: false,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    },
   });
 }
 
